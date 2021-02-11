@@ -14,9 +14,10 @@ import (
 //and return its io.Reader stream.
 type HTTP struct {
 	//URL to poll for new binaries
-	URL          string
-	Interval     time.Duration
-	CheckHeaders []string
+	URL                 string
+	Interval            time.Duration
+	CheckHeaders        []string
+	InitialHeaderStates map[string]string
 	//internal state
 	delay bool
 	lasts map[string]string
@@ -31,7 +32,11 @@ func (h *HTTP) Init() error {
 	if h.URL == "" {
 		return fmt.Errorf("URL required")
 	}
-	h.lasts = map[string]string{}
+	if h.InitialHeaderStates == nil {
+		h.lasts = h.InitialHeaderStates
+	} else {
+		h.lasts = map[string]string{}
+	}
 	if h.Interval == 0 {
 		h.Interval = 5 * time.Minute
 	}
