@@ -289,7 +289,7 @@ func (mp *master) fetch() {
 		return
 	}
 	if tokenIn != string(tokenOut) {
-		mp.warnf("sanity check failed")
+		mp.warnf("sanity check failed, expected token: %s, received token: %S", tokenIn, string(tokenOut))
 		return
 	}
 	//overwrite!
