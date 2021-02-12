@@ -18,6 +18,9 @@ type HTTP struct {
 	Interval            time.Duration
 	CheckHeaders        []string
 	InitialHeaderStates map[string]string
+	SendHeaderInGet     bool
+	Secret              string
+	SecretFunc          func(interface{}...) string
 	//internal state
 	delay bool
 	lasts map[string]string
@@ -53,41 +56,73 @@ func (h *HTTP) Fetch() (io.Reader, error) {
 		time.Sleep(h.Interval)
 	}
 	h.delay = true
-	//status check using HEAD
-	resp, err := http.Head(h.URL)
+
+	request, err := http.NewRequest("HEAD", h.URL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("HEAD request creation failed (%s)", err)
+	}
+	if len(h.lasts) != 0 {
+		for k, v := range h.lasts {
+			request.Header.Add(k, v)
+		}
+	}
+	if h.Secret != "" {
+		request.Header.Add(h.Secret, h.SecretFunc())
+	}
+	headresp, err := http.DefaultClient.Do(request)
 	if err != nil {
 		return nil, fmt.Errorf("HEAD request failed (%s)", err)
 	}
-	resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HEAD request failed (status code %d)", resp.StatusCode)
+	headresp.Body.Close()
+	if headresp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("HEAD request failed (status code %d)", headresp.StatusCode)
 	}
 	//if all headers match, skip update
 	matches, total := 0, 0
 	for _, header := range h.CheckHeaders {
-		if curr := resp.Header.Get(header); curr != "" {
+		if curr := headresp.Header.Get(header); curr != "" {
 			if last, ok := h.lasts[header]; ok && last == curr {
 				matches++
 			}
-			h.lasts[header] = curr
+			//check if headers match, however changing to lasts should happen after GET, otherwise another fetch is not possible
 			total++
 		}
 	}
 	if matches == total {
 		return nil, nil //skip, file match
 	}
+
 	//binary fetch using GET
-	resp, err = http.Get(h.URL)
+	var getreq *http.Request
+	if h.SendHeaderInGet {
+		//use HEAD request, just change method => this will keep the headers from HEAD request
+		getreq = request
+		getreq.Method = "GET"
+	} else {
+		getreq, err = http.NewRequest("GET", h.URL, nil)
+		if h.Secret != "" {
+			getreq.Header.Add(h.Secret, h.SecretFunc())
+		}
+		if err != nil {
+			return nil, fmt.Errorf("GET request creation failed (%s)", err)
+		}
+	}
+	getresp, err := http.DefaultClient.Do(getreq)
 	if err != nil {
 		return nil, fmt.Errorf("GET request failed (%s)", err)
 	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("GET request failed (status code %d)", resp.StatusCode)
+	if getresp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("GET request failed (status code %d)", getresp.StatusCode)
+	}
+	for _, header := range h.CheckHeaders {
+		if curr := headresp.Header.Get(header); curr != "" {
+			h.lasts[header] = curr
+		}
 	}
 	//extract gz files
-	if strings.HasSuffix(h.URL, ".gz") && resp.Header.Get("Content-Encoding") != "gzip" {
-		return gzip.NewReader(resp.Body)
+	if strings.HasSuffix(h.URL, ".gz") && getresp.Header.Get("Content-Encoding") != "gzip" {
+		return gzip.NewReader(getresp.Body)
 	}
 	//success!
-	return resp.Body, nil
+	return getresp.Body, nil
 }
