@@ -20,7 +20,7 @@ type HTTP struct {
 	InitialHeaderStates map[string]string
 	SendHeaderInGet     bool
 	Secret              string
-	SecretFunc          func(interface{}...) string
+	SecretFunc          func() string
 	//internal state
 	delay bool
 	lasts map[string]string
