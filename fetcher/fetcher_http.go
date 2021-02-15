@@ -35,7 +35,7 @@ func (h *HTTP) Init() error {
 	if h.URL == "" {
 		return fmt.Errorf("URL required")
 	}
-	if h.InitialHeaderStates == nil {
+	if h.InitialHeaderStates != nil {
 		h.lasts = h.InitialHeaderStates
 	} else {
 		h.lasts = map[string]string{}

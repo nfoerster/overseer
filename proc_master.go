@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -288,8 +289,8 @@ func (mp *master) fetch() {
 		mp.warnf("failed to run temp binary: %s (%s) output \"%s\"", err, tmpBinPath, tokenOut)
 		return
 	}
-	if tokenIn != string(tokenOut) {
-		mp.warnf("sanity check failed, expected token: %s, received token: %S", tokenIn, string(tokenOut))
+	if strings.Contains(string(tokenOut), tokenIn) == false {
+		mp.warnf("sanity check failed, expected token: %s, received token: %s", tokenIn, string(tokenOut))
 		return
 	}
 	//overwrite!
