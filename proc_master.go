@@ -90,14 +90,17 @@ func (mp *master) checkBinary() error {
 	mp.binHash = hash.Sum(nil)
 	f.Close()
 	//test bin<->tmpbin moves
-	if mp.Config.Fetcher != nil {
-		if err := move(tmpBinPath, mp.binPath); err != nil {
-			return fmt.Errorf("cannot move binary (%s)", err)
-		}
-		if err := move(mp.binPath, tmpBinPath); err != nil {
-			return fmt.Errorf("cannot move binary back (%s)", err)
-		}
-	}
+
+	//I don't get it, why this is necessary? In Windows this will fail if the exe runs in a process.
+	/*
+		if mp.Config.Fetcher != nil {
+			if err := move(tmpBinPath, mp.binPath); err != nil {
+				return fmt.Errorf("cannot move binary (%s)", err)
+			}
+			if err := move(mp.binPath, tmpBinPath); err != nil {
+				return fmt.Errorf("cannot move binary back (%s)", err)
+			}
+		}*/
 	return nil
 }
 
