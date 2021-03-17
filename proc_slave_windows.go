@@ -5,6 +5,7 @@ package overseer
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -67,6 +68,7 @@ func (sp *slave) watchParent() error {
 		for {
 			//should not error as long as the process is alive
 			if _, err := GetWin32Proc(int32(sp.masterPid)); err != nil {
+				log.Printf("GetWin32Proc failed, exit code 1, err:%v", err.Error())
 				os.Exit(1)
 			}
 			time.Sleep(2 * time.Second)

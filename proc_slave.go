@@ -128,7 +128,7 @@ func (sp *slave) watchSignal() {
 		//start death-timer
 		go func() {
 			time.Sleep(sp.Config.TerminateTimeout)
-			sp.debugf("timeout. forceful shutdown")
+			sp.debugf("timeout. forceful shutdown, exit code 1")
 			os.Exit(1)
 		}()
 	}()
@@ -136,6 +136,7 @@ func (sp *slave) watchSignal() {
 
 func (sp *slave) triggerRestart() {
 	if err := sp.masterProc.Signal(sp.Config.RestartSignal); err != nil {
+		log.Printf("triggerRestart failed, exit code 1, err:%v", err.Error())
 		os.Exit(1)
 	}
 }

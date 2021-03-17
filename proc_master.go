@@ -92,6 +92,7 @@ func (mp *master) checkBinary() error {
 	//test bin<->tmpbin moves
 
 	//I don't get it, why this is necessary? In Windows this will fail if the exe runs in a process.
+
 	/*
 		if mp.Config.Fetcher != nil {
 			if err := move(tmpBinPath, mp.binPath); err != nil {
@@ -141,7 +142,7 @@ func (mp *master) handleSignal(s os.Signal) {
 	} else
 	//otherwise if not running, kill on CTRL+c
 	if s == os.Interrupt {
-		mp.debugf("interupt with no slave")
+		mp.debugf("interupt with no slave, exit code 1")
 		os.Exit(1)
 	} else {
 		mp.debugf("signal discarded (%s), no slave process", s)
@@ -388,6 +389,8 @@ func (mp *master) fork() error {
 		//proxy exit code out to master
 		code := 0
 		if err != nil {
+			log.Printf("error from child %v", err.Error())
+
 			code = 1
 			if exiterr, ok := err.(*exec.ExitError); ok {
 				if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
@@ -395,7 +398,7 @@ func (mp *master) fork() error {
 				}
 			}
 		}
-		mp.debugf("prog exited with %d", code)
+		log.Printf("prog exited with %d", code)
 		//if a restarts are disabled or if it was an
 		//unexpected crash, proxy this exit straight
 		//through to the main process

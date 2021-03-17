@@ -98,6 +98,7 @@ func RunErr(c Config) error {
 func Run(c Config) {
 	err := runErr(&c)
 	if err != nil {
+		log.Printf("run error, err:%v", err.Error())
 		if c.Required {
 			log.Fatalf("[overseer] %s", err)
 		} else if c.Debug || !c.NoWarn {
@@ -106,6 +107,7 @@ func Run(c Config) {
 		c.Program(DisabledState)
 		return
 	}
+	log.Printf("run error, exit code 0")
 	os.Exit(0)
 }
 
@@ -132,6 +134,7 @@ func sanityCheck() bool {
 //necessary.
 func SanityCheck() {
 	if sanityCheck() {
+		log.Printf("sanity check failed, exit code 0")
 		os.Exit(0)
 	}
 }

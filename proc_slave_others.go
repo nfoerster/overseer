@@ -4,6 +4,7 @@ package overseer
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"syscall"
 	"time"
@@ -21,6 +22,7 @@ func (sp *slave) watchParent() error {
 		for {
 			//should not error as long as the process is alive
 			if err := sp.masterProc.Signal(syscall.Signal(0)); err != nil {
+				log.Printf("signalling to master failed, exit code 1, err:%v", err.Error())
 				os.Exit(1)
 			}
 			time.Sleep(2 * time.Second)
